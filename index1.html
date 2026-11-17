@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Number Engine – پاک‌سازی بانک شماره تلفن</title>
+<style>
+:root{--bg:#f2f4f6;--cd:#fff;--tx:#1b2530;--mu:#66727f;--bd:#d6dde3;--ok:#1b8a57;--dup:#d03a3a;--sus:#d98516;--ne:#66727f;--ac:#244f78;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#12171c;--cd:#1b222a;--tx:#e6ebf0;--mu:#93a0ad;--bd:#2d3742;--ok:#35b57b;--dup:#e86a6a;--sus:#f0a243;--ne:#93a0ad;--ac:#6fa6d6;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#12171c;--cd:#1b222a;--tx:#e6ebf0;--mu:#93a0ad;--bd:#2d3742;--ok:#35b57b;--dup:#e86a6a;--sus:#f0a243;--ne:#93a0ad;--ac:#6fa6d6;color-scheme:dark}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.7 Tahoma,"Segoe UI",sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:var(--ac);color:#fff}
+header h1{font-size:17px;margin:0}header small{opacity:.85}
+main{max-width:1180px;margin:auto;padding:16px}
+.cd{background:var(--cd);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:14px}
+textarea{width:100%;min-height:150px;resize:vertical;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:8px;font:14px/1.5 Consolas,monospace;direction:ltr;text-align:left}
+input[type=search],input[type=text]{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;font:inherit}
+button,.bt{background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:6px;padding:6px 12px;font:inherit;cursor:pointer;display:inline-block}
+button:hover{border-color:var(--ac)}button:disabled{opacity:.5;cursor:default}
+.pr{background:var(--ac);color:#fff;border-color:var(--ac)}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;align-items:center}
+.pg{height:8px;background:var(--bd);border-radius:4px;overflow:hidden;margin-top:8px}.pg i{display:block;height:100%;width:0;background:var(--ac)}
+.st{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.st div{background:var(--cd);border:1px solid var(--bd);border-top:4px solid var(--c);border-radius:8px;padding:10px}
+.st b{display:block;font-size:22px;color:var(--c)}.st span{color:var(--mu);font-size:13px}
+.tb{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px}.tb button.on{background:var(--ac);color:#fff;border-color:var(--ac)}
+table{width:100%;border-collapse:collapse}td,th{padding:5px 8px;border-bottom:1px solid var(--bd);text-align:right;vertical-align:top}
+.num{direction:ltr;unicode-bidi:isolate;text-align:left;font-family:Consolas,monospace}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:700px){.g2{grid-template-columns:1fr}}
+.mu{color:var(--mu);font-size:13px}pre{background:var(--bg);padding:10px;border-radius:6px;white-space:pre-wrap;direction:ltr;text-align:left}
+#toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ac);color:#fff;padding:8px 18px;border-radius:20px;display:none;z-index:9}
+</style></head><body>
+<header><h1>Smart Number Engine</h1><small>پردازش کاملاً محلی – بدون اینترنت و بدون ارسال داده</small><button id="th">☾ / ☀</button></header>
+<main>
+<section class="cd">
+<b>ورود شماره‌ها</b> <span class="mu">(پیست از اکسل، TXT، CSV، XLSX؛ جداکننده: سطر، فاصله، کاما؛ متن اضافی نادیده گرفته می‌شود)</span>
+<textarea id="in" placeholder="شماره‌ها را اینجا پیست کنید..."></textarea>
+<div class="bar">
+<button class="pr" id="go">پردازش</button><button id="cx" disabled>لغو</button>
+<label class="bt">بارگذاری فایل<input type="file" id="fm" data-t="in" multiple accept=".txt,.csv,.tsv,.xlsx" hidden></label>
+<button data-a="clrin">پاک‌کردن ورودی</button><button data-a="undo">↶ بازگردانی آخرین عملیات</button>
+<span class="mu" id="ms"></span></div>
+<div class="pg"><i id="bar"></i></div>
+</section>
+<div class="st" id="st"></div>
+<div class="tb" id="tb"></div>
+<section class="cd" id="pn"></section>
+<section class="cd" id="p-tools" hidden>
+<b>ابزار لیست‌ها</b> <span class="mu">(لیست A = لیست قبلی/اول، لیست B = لیست دوم)</span>
+<div class="g2"><div>A<textarea id="ta"></textarea><label class="bt">فایل<input type="file" data-t="ta" multiple accept=".txt,.csv,.tsv,.xlsx" hidden></label></div>
+<div>B<textarea id="tbx"></textarea><label class="bt">فایل<input type="file" data-t="tbx" multiple accept=".txt,.csv,.tsv,.xlsx" hidden></label></div></div>
+<div class="bar"><button data-a="op:merge">ادغام (A + B)</button><button data-a="op:inter">مشترک (A ∩ B)</button><button data-a="op:diffab">حذف شماره‌های B از A</button><button data-a="op:new">جدیدهای B نسبت به A</button></div>
+<div id="to"></div></section>
+</main><div id="toast"></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s),e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fa=n=>Number(n).toLocaleString('fa-IR');
+const ls={g:k=>{try{return localStorage.getItem(k)}catch(_){return null}},s:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}},d:k=>{try{localStorage.removeItem(k)}catch(_){}}};
+const DPF='090,091,092,093,094,095,096,097,098,099';
+const prefixes=()=>(ls.g('sne_p')||DPF).split(/[\s,;،]+/).filter(Boolean);
+/* ---------- Smart Number Engine (runs inside a Web Worker) ---------- */
+function W(post){post=post||(m=>postMessage(m));
+const P=s=>s.replace(/[۰-۹]/g,c=>c.charCodeAt(0)-1776).replace(/[٠-٩]/g,c=>c.charCodeAt(0)-1632);
+let pf=[];
+function cls(d){let n=d,r=[],s='ok';
+ if(/^0098\d{10}$/.test(d))n='0'+d.slice(4);
+ else if(/^98\d{10}$/.test(d))n='0'+d.slice(2);
+ else if(/^980\d{10}$/.test(d)){n=d.slice(2);s='sus';r.push('صفر اضافی پس از کد ۹۸')}
+ else if(/^098\d{10}$/.test(d)){n='0'+d.slice(3);s='sus';r.push('پیش‌شماره ۰ اضافی')}
+ else if(/^9\d{9}$/.test(d))n='0'+d;
+ if(/^09\d{9}$/.test(n)){
+  if(pf.indexOf(n.slice(0,3))<0){s='sus';r.push('پیش‌شماره اپراتور ناشناخته')}
+  const t=n.slice(3);if(/(\d)\1{6,}/.test(t)||'01234567890'.includes(t.slice(0,7))||'09876543210'.includes(t.slice(0,7))){s='sus';r.push('الگوی مشکوک (ارقام تکراری/پله‌ای)')}
+  return{s,n,r:r.join('؛')}}
+ if(/^0[1-8]\d{9}$/.test(n))return{s:'bad',r:'شماره ثابت (موبایل نیست)'};
+ return{s:'bad',r:d.length<10?'شماره ناقص ('+d.length+' رقم)':d.length>14?'بیش از حد طولانی':'طول/ساختار نامعتبر ('+d.length+' رقم)'}}
+const H=ev=>{pf=ev.data.pf;const tk=ev.data.t.split(/[\n\r\t,;،؛|]+/),M=new Map(),bad=[];let q=0;
+ const out=raw=>{const d=raw.replace(/\D/g,'');if(d.length<7)return;q++;const r=cls(d);
+  if(r.s=='bad'){bad.push({raw:raw.trim(),r:r.r});return}
+  let it=M.get(r.n);if(!it){it={n:r.n,s:r.s,r:r.r,c:0,raws:[],f:q,l:q};M.set(r.n,it)}
+  if(it.s=='sus'&&r.s=='ok'){it.s='ok';it.r=''}
+  it.c++;it.l=q;const w=raw.trim();if(it.raws.length<8&&it.raws.indexOf(w)<0)it.raws.push(w)};
+ const chunk=c=>{let a='';for(const w of c.trim().split(/\s+/)){const dw=w.replace(/\D/g,'');if(!dw)continue;
+   if(a){const da=a.replace(/\D/g,'');if(da.length+dw.length>14||(cls(dw).s=='ok'&&cls(da+dw).s!='ok')){out(a);a=''}}
+   a=a?a+' '+w:w;if(cls(a.replace(/\D/g,'')).s=='ok'){out(a);a=''}}
+  if(a)out(a)};
+ for(let i=0;i<tk.length;i++){const m=P(tk[i]).match(/\+?\d[\d\s\-().\u200c\u200f]*\d/g);if(m)for(const c of m)chunk(c);
+  if(i%3000==0)post({p:i/tk.length})}
+ post({items:[...M.values()],bad})};
+if(typeof importScripts=='function')onmessage=H;else return H}
+function run(text,onp){let r;try{r=runW(text,onp)}catch(_){return runM(text,onp)}
+ return{p:r.p.catch(x=>x==='cancel'?Promise.reject(x):runM(text,onp).p),cancel:r.cancel}}
+function runM(text,onp){return{p:new Promise((res,rj)=>setTimeout(()=>{try{W(m=>m.p!=null?onp&&onp(m.p):res(m))({data:{t:text,pf:prefixes()}})}catch(x){rj(x)}},30)),cancel(){}}}
+function runW(text,onp){const w=new Worker(URL.createObjectURL(new Blob(['('+W+')()'],{type:'text/javascript'})));let rj;
+ const p=new Promise((res,j)=>{rj=j;w.onmessage=m=>{if(m.data.p!=null){onp&&onp(m.data.p)}else{w.terminate();res(m.data)}};w.onerror=x=>{w.terminate();j(x.message||'worker error')}});
+ w.postMessage({t:text,pf:prefixes()});return{p,cancel:()=>{w.terminate();rj('cancel')}}}
+/* ---------- state ---------- */
+let S={ok:[],sus:[],bad:[]},sel=new Set(),undo=[],tab='ok',q='',cur=null,T=[];
+const snap=()=>{undo.push(S);if(undo.length>20)undo.shift()};
+const all=()=>S.ok.concat(S.sus);
+const stats=()=>{const a=all(),occ=a.reduce((x,i)=>x+i.c,0),okOcc=S.ok.reduce((x,i)=>x+i.c,0);return{occ,okOcc,rem:occ-a.length,total:occ+S.bad.length}};
+const dupWhy=x=>x.raws.length<2?'تکرار عین‌به‌عین':'فرمت‌های مختلف ('+x.raws.length+' شکل) با شماره استاندارد یکسان';
+const toast=t=>{const o=$('#toast');o.textContent=t;o.style.display='block';clearTimeout(toast.h);toast.h=setTimeout(()=>o.style.display='none',2600)};
+/* ---------- export ---------- */
+const CT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=CT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
+function zip(files){const E=new TextEncoder(),pt=[],cd=[];let off=0;
+ for(const f of files){const nm=E.encode(f.n),d=E.encode(f.d),c=crc(d),h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint32(14,c,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,nm.length,true);pt.push(h,nm,d);
+  const g=new DataView(new ArrayBuffer(46));g.setUint32(0,0x02014b50,true);g.setUint16(4,20,true);g.setUint16(6,20,true);g.setUint32(16,c,true);g.setUint32(20,d.length,true);g.setUint32(24,d.length,true);g.setUint16(28,nm.length,true);g.setUint32(42,off,true);cd.push(g,nm);off+=30+nm.length+d.length}
+ let cs=0;for(const p of cd)cs+=p.byteLength;const z=new DataView(new ArrayBuffer(22));
+ z.setUint32(0,0x06054b50,true);z.setUint16(8,files.length,true);z.setUint16(10,files.length,true);z.setUint32(12,cs,true);z.setUint32(16,off,true);
+ return new Blob([...pt,...cd,z],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+function xlsx(rows){const R='http://schemas.openxmlformats.org/',M=R+'spreadsheetml/2006/main';
+ const sh='<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="'+M+'"><sheetData>'+rows.map(r=>'<row>'+r.map(c=>'<c t="inlineStr"><is><t>'+e(c)+'</t></is></c>').join('')+'</row>').join('')+'</sheetData></worksheet>';
+ return zip([{n:'[Content_Types].xml',d:'<?xml version="1.0" encoding="UTF-8"?><Types xmlns="'+R+'package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
+ {n:'_rels/.rels',d:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="'+R+'package/2006/relationships"><Relationship Id="rId1" Type="'+R+'officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
+ {n:'xl/workbook.xml',d:'<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="'+M+'" xmlns:r="'+R+'officeDocument/2006/relationships"><sheets><sheet name="Numbers" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+ {n:'xl/_rels/workbook.xml.rels',d:'<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="'+R+'package/2006/relationships"><Relationship Id="rId1" Type="'+R+'officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
+ {n:'xl/worksheets/sheet1.xml',d:sh}])}
+function dl(b,n){const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000)}
+function exp(k,rows,nm){const n=nm+'-'+new Date().toISOString().slice(0,10);if(!rows.length)return toast('لیست خالی است');
+ if(k=='xlsx')dl(xlsx(rows),n+'.xlsx');
+ else if(k=='csv')dl(new Blob(['\ufeff'+rows.map(r=>r.map(c=>/[",\n]/.test(c)?'"'+String(c).replace(/"/g,'""')+'"':c).join(',')).join('\r\n')],{type:'text/csv'}),n+'.csv');
+ else dl(new Blob([rows.map(r=>r.join('\t')).join('\r\n')],{type:'text/plain'}),n+'.txt');
+ toast('خروجی '+k.toUpperCase()+' ساخته شد')}
+async function cp(rows){if(!rows.length)return toast('لیست خالی است');const t=rows.map(r=>r.join('\t')).join('\n');
+ const h='<table>'+rows.map(r=>'<tr>'+r.map(c=>"<td style=\"mso-number-format:'\\@'\">"+e(c)+'</td>').join('')+'</tr>').join('')+'</table>';
+ try{await navigator.clipboard.write([new ClipboardItem({'text/plain':new Blob([t],{type:'text/plain'}),'text/html':new Blob([h],{type:'text/html'})})])}
+ catch(_){try{await navigator.clipboard.writeText(t)}catch(_){const a=document.createElement('textarea');a.value=t;document.body.append(a);a.select();document.execCommand('copy');a.remove()}}
+ toast(fa(rows.length)+' ردیف کپی شد')}
+/* ---------- file import ---------- */
+const un=s=>s.replace(/&(amp|lt|gt|quot|apos);/g,(m,a)=>({amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"}[a]));
+async function readXlsx(buf){const u=new Uint8Array(buf),dv=new DataView(buf),td=new TextDecoder();let x=u.length-22;while(x>=0&&dv.getUint32(x,true)!==0x06054b50)x--;
+ if(x<0)throw 'فایل XLSX معتبر نیست';let n=dv.getUint16(x+10,true),p=dv.getUint32(x+16,true);const F={};
+ for(let i=0;i<n;i++){const m=dv.getUint16(p+10,true),cs=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),xl=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true),nm=td.decode(u.subarray(p+46,p+46+nl));p+=46+nl+xl+cl;
+  if(!/^xl\/(sharedStrings|worksheets\/[^/]+)\.xml$/.test(nm))continue;
+  const st=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),d=u.subarray(st,st+cs);
+  F[nm]=m===0?td.decode(d):await new Response(new Blob([d]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text()}
+ const ss=[];(F['xl/sharedStrings.xml']||'').replace(/<si>([\s\S]*?)<\/si>/g,(_,b)=>{ss.push(un([...b.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(a=>a[1]).join('')))});
+ const o=[];for(const k in F){if(k.includes('shared'))continue;
+  for(const c of F[k].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)){const t=/t="(\w+)"/.exec(c[1]),b=c[2]||'';let v;
+   if(t&&t[1]=='inlineStr')v=un([...b.matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)].map(a=>a[1]).join(''));
+   else{const m=/<v>([\s\S]*?)<\/v>/.exec(b);if(!m)continue;v=t&&t[1]=='s'?ss[+m[1]]:un(m[1])}
+   if(v!=null&&v!=='')o.push(v)}}
+ return o.join('\n')}
+document.addEventListener('change',async ev=>{const t=ev.target;
+ if(t.type=='file'){const ta=$('#'+t.dataset.t);for(const f of t.files){try{
+   if(/\.xlsx$/i.test(f.name))ta.value+=(ta.value?'\n':'')+await readXlsx(await f.arrayBuffer());
+   else if(/\.xls$/i.test(f.name))toast('فرمت قدیمی XLS پشتیبانی نمی‌شود؛ فایل را به XLSX یا CSV ذخیره کنید');
+   else ta.value+=(ta.value?'\n':'')+await f.text();toast('فایل بارگذاری شد: '+f.name)}catch(x){toast('خطا در خواندن '+f.name+': '+x)}}t.value=''}
+ else if(t.dataset.s!=null){t.checked?sel.add(t.dataset.s):sel.delete(t.dataset.s)}});
+/* ---------- process ---------- */
+async function go(){const t=$('#in').value;if(!t.trim())return toast('ورودی خالی است');
+ $('#go').disabled=true;$('#cx').disabled=false;$('#bar').style.width='0';const t0=performance.now();
+ try{cur=run(t,p=>$('#bar').style.width=(p*100)+'%');const d=await cur.p;snap();S={ok:d.items.filter(x=>x.s=='ok'),sus:d.items.filter(x=>x.s=='sus'),bad:d.bad};sel.clear();
+  const ms=Math.round(performance.now()-t0),s=stats(),h=JSON.parse(ls.g('sne_h')||'[]');
+  h.push({t:new Date().toLocaleString('fa-IR'),total:s.total,ok:S.ok.length,rem:s.rem,bad:S.bad.length,sus:S.sus.length,ms});ls.s('sne_h',JSON.stringify(h.slice(-100)));
+  $('#ms').textContent='زمان پردازش: '+fa(ms)+' میلی‌ثانیه';$('#bar').style.width='100%';render()}
+ catch(x){if(x!='cancel')toast('خطا: '+x);else{$('#bar').style.width='0';toast('عملیات لغو شد')}}
+ $('#go').disabled=false;$('#cx').disabled=true}
+/* ---------- render ---------- */
+const TABS=[['ok','معتبر'],['dup','تکراری'],['bad','نامعتبر'],['sus','مشکوک'],['tools','ابزار لیست‌ها'],['hist','تاریخچه'],['set','تنظیمات و تست']];
+const dups=()=>all().filter(x=>x.c>1);
+function rowsOf(l){return l=='ok'?S.ok.map(x=>[x.n]):l=='sel'?S.ok.filter(x=>sel.has(x.n)).map(x=>[x.n]):l=='sus'?S.sus.map(x=>[x.n,x.r,x.raws[0]]):l=='dup'?dups().map(x=>[x.n,x.c,x.raws.join(' | '),dupWhy(x)]):S.bad.map(x=>[x.raw,x.r])}
+const eb=l=>['xlsx','csv','txt'].map(k=>'<button data-a="x:'+k+':'+l+'">'+k.toUpperCase()+'</button>').join('');
+const more=(n,m)=>n>m?'<p class="mu">نمایش '+fa(m)+' ردیف نخست از '+fa(n)+' (خروجی و کپی شامل همه است)</p>':'';
+function render(){const s=stats(),C={ok:'--ok',dup:'--dup',sus:'--sus',ne:'--ne'};
+ $('#st').innerHTML=[['کل شماره‌های واردشده',s.total,'ne'],['معتبر (با تکرار)',s.okOcc,'ok'],['معتبر غیرتکراری',S.ok.length,'ok'],['تکراری حذف‌شده',s.rem,'dup'],['نامعتبر',S.bad.length,'ne'],['مشکوک',S.sus.length,'sus']].map(a=>'<div style="--c:var('+C[a[2]]+')"><b>'+fa(a[1])+'</b><span>'+a[0]+'</span></div>').join('');
+ $('#tb').innerHTML=TABS.map(t=>'<button data-a="tab:'+t[0]+'" class="'+(tab==t[0]?'on':'')+'">'+t[1]+'</button>').join('');
+ $('#p-tools').hidden=tab!='tools';$('#pn').hidden=tab=='tools';if(tab=='tools')return;let h='';
+ if(tab=='ok'){const Q=q.replace(/[۰-۹]/g,c=>c.charCodeAt(0)-1776),f=Q?S.ok.filter(x=>x.n.includes(Q)):S.ok;
+  h='<div class="bar"><b style="color:var(--ok)">آماده ارسال پیامک: '+fa(S.ok.length)+' مخاطب</b><input type="search" id="q" placeholder="جست‌وجو..." value="'+e(q)+'"></div><div class="bar"><button class="pr" data-a="cpa">کپی همه</button><button data-a="cps">کپی انتخاب‌شده ('+fa(sel.size)+')</button><button data-a="sela">انتخاب همه'+(Q?' (نتیجه جست‌وجو)':'')+'</button><button data-a="seln">لغو انتخاب</button><button data-a="dels">حذف انتخاب‌شده</button>'+eb('ok')+'</div><p class="mu">برای باز کردن در اکسل با حفظ صفر ابتدایی از XLSX استفاده کنید؛ کپی همه نیز به‌صورت متن (Text) پیست می‌شود.</p><table>'+f.slice(0,300).map(x=>'<tr><td width="30"><input type="checkbox" data-s="'+x.n+'" '+(sel.has(x.n)?'checked':'')+'></td><td class="num">'+x.n+'</td><td class="mu">'+(x.c>1?'×'+x.c:'')+'</td><td width="40"><button data-a="del:'+x.n+'">✕</button></td></tr>').join('')+'</table>'+more(f.length,300)}
+ else if(tab=='dup'){const d=dups();h='<div class="bar"><b style="color:var(--dup)">'+fa(d.length)+' شماره تکراری</b><button data-a="cpd">کپی</button>'+eb('dup')+'</div><table><tr><th>شماره استاندارد</th><th>تعداد</th><th>شکل‌های خام</th><th>علت</th></tr>'+d.slice(0,300).map(x=>'<tr><td class="num">'+x.n+'</td><td>'+fa(x.c)+'</td><td class="num">'+e(x.raws.join(' | '))+'</td><td>'+dupWhy(x)+' (ردیف '+fa(x.f)+' و '+fa(x.l)+')</td></tr>').join('')+'</table>'+more(d.length,300)}
+ else if(tab=='bad'){h='<div class="bar"><b>'+fa(S.bad.length)+' شماره نامعتبر</b>'+eb('bad')+'</div><table><tr><th>ورودی</th><th>علت</th></tr>'+S.bad.slice(0,300).map(x=>'<tr><td class="num">'+e(x.raw)+'</td><td>'+e(x.r)+'</td></tr>').join('')+'</table>'+more(S.bad.length,300)}
+ else if(tab=='sus'){h='<div class="bar"><b style="color:var(--sus)">'+fa(S.sus.length)+' شماره مشکوک (حذف نشده‌اند)</b><button data-a="apa">تأیید همه به‌عنوان معتبر</button>'+eb('sus')+'</div><table><tr><th>شماره استاندارد</th><th>علت</th><th>ورودی</th><th></th></tr>'+S.sus.slice(0,300).map(x=>'<tr><td class="num">'+x.n+'</td><td>'+e(x.r)+'</td><td class="num">'+e(x.raws[0])+'</td><td><button data-a="ap:'+x.n+'">تأیید</button></td></tr>').join('')+'</table>'+more(S.sus.length,300)}
+ else if(tab=='hist'){const H=JSON.parse(ls.g('sne_h')||'[]').reverse();h='<div class="bar"><button data-a="rep">دانلود گزارش عملیات فعلی</button><button data-a="clrh">پاک‌کردن تاریخچه</button></div><table><tr><th>زمان</th><th>کل</th><th>معتبر یکتا</th><th>تکراری</th><th>نامعتبر</th><th>مشکوک</th><th>ms</th></tr>'+H.map(x=>'<tr><td>'+e(x.t)+'</td><td>'+fa(x.total)+'</td><td>'+fa(x.ok)+'</td><td>'+fa(x.rem)+'</td><td>'+fa(x.bad)+'</td><td>'+fa(x.sus)+'</td><td>'+fa(x.ms)+'</td></tr>').join('')+'</table>'}
+ else{h='<b>پیش‌شماره‌های مجاز موبایل (قابل ویرایش)</b><p class="mu">سه‌رقمی، با کاما جدا کنید. شماره موبایل با پیش‌شماره خارج از این فهرست «مشکوک» می‌شود، نه حذف.</p><input type="text" id="pf" style="width:100%;direction:ltr" value="'+e(prefixes().join(','))+'"><div class="bar"><button data-a="svp">ذخیره</button><button data-a="rsp">پیش‌فرض</button><button data-a="test">اجرای خودآزمایی (۵۰ و ۱۰۰ هزار شماره)</button><button data-a="wipe" style="color:var(--dup)">پاک‌سازی کامل اطلاعات</button></div><p class="mu">اعتبار ساختاری شماره به معنی فعال بودن سیم‌کارت یا دریافت پیامک نیست.</p><pre id="tr" hidden></pre>'}
+ $('#pn').innerHTML=h}
+/* ---------- actions ---------- */
+document.addEventListener('input',ev=>{if(ev.target.id=='q'){q=ev.target.value;const p=ev.target.selectionStart;render();const i=$('#q');i.focus();i.setSelectionRange(p,p)}});
+document.addEventListener('click',async ev=>{const b=ev.target.closest('[data-a]');if(!b)return;const[a,x,y]=b.dataset.a.split(':');
+ if(a=='tab'){tab=x;render()}
+ else if(a=='cpa')cp(rowsOf('ok'));else if(a=='cps')cp(rowsOf('sel'));else if(a=='cpd')cp(rowsOf('dup'));
+ else if(a=='x')exp(x,rowsOf(y),'numbers-'+y);
+ else if(a=='sela'){const Q=q.replace(/[۰-۹]/g,c=>c.charCodeAt(0)-1776);S.ok.filter(i=>!Q||i.n.includes(Q)).forEach(i=>sel.add(i.n));render()}
+ else if(a=='seln'){sel.clear();render()}
+ else if(a=='dels'){if(!sel.size)return toast('چیزی انتخاب نشده');snap();S={...S,ok:S.ok.filter(i=>!sel.has(i.n))};sel.clear();render()}
+ else if(a=='del'){snap();S={...S,ok:S.ok.filter(i=>i.n!=x)};sel.delete(x);render()}
+ else if(a=='ap'||a=='apa'){snap();const m=a=='apa'?S.sus:S.sus.filter(i=>i.n==x);S={...S,sus:S.sus.filter(i=>!m.includes(i)),ok:S.ok.concat(m.map(i=>({...i,s:'ok'}))).sort((p,r)=>p.f-r.f)};render()}
+ else if(a=='undo'){if(!undo.length)return toast('عملیاتی برای بازگردانی نیست');S=undo.pop();sel.clear();render();toast('آخرین عملیات بازگردانده شد')}
+ else if(a=='clrin'){$('#in').value=''}
+ else if(a=='rep'){const s=stats();dl(new Blob(['گزارش Smart Number Engine – '+new Date().toLocaleString('fa-IR')+'\r\nکل: '+s.total+'\r\nمعتبر یکتا: '+S.ok.length+'\r\nتکراری حذف‌شده: '+s.rem+'\r\nنامعتبر: '+S.bad.length+'\r\nمشکوک: '+S.sus.length+'\r\n\r\n--- تکراری‌ها ---\r\n'+rowsOf('dup').map(r=>r.join('\t')).join('\r\n')+'\r\n\r\n--- نامعتبرها ---\r\n'+rowsOf('bad').map(r=>r.join('\t')).join('\r\n')+'\r\n\r\n--- مشکوک‌ها ---\r\n'+rowsOf('sus').map(r=>r.join('\t')).join('\r\n')],{type:'text/plain;charset=utf-8'}),'report.txt')}
+ else if(a=='clrh'){ls.d('sne_h');render()}
+ else if(a=='svp'){const v=$('#pf').value.split(/[\s,;،]+/).filter(i=>/^\d{3}$/.test(i));ls.s('sne_p',v.join(','));toast('ذخیره شد');render()}
+ else if(a=='rsp'){ls.d('sne_p');render()}
+ else if(a=='wipe'){if(!confirm('همه اطلاعات (ورودی، نتایج، تاریخچه، تنظیمات) پاک شود؟'))return;S={ok:[],sus:[],bad:[]};undo=[];sel.clear();['in','ta','tbx'].forEach(i=>$('#'+i).value='');['sne_h','sne_p'].forEach(ls.d);T=[];$('#to').innerHTML='';render();toast('همه چیز پاک شد')}
+ else if(a=='test')selftest();
+ else if(a=='op')await op(x);
+ else if(a=='tc')cp(T.map(i=>[i]));else if(a=='tx')exp(x,T.map(i=>[i]),'list')});
+$('#go').onclick=go;$('#cx').onclick=()=>cur&&cur.cancel();
+$('#th').onclick=()=>{const d=document.documentElement,dark=getComputedStyle(d).getPropertyValue('--bg').trim()=='#12171c';d.dataset.theme=dark?'light':'dark';ls.s('sne_t',d.dataset.theme)};
+if(ls.g('sne_t'))document.documentElement.dataset.theme=ls.g('sne_t');
+/* ---------- list tools ---------- */
+async function op(k){const[A,B]=await Promise.all([run($('#ta').value).p,run($('#tbx').value).p]);
+ const ks=d=>d.items.map(i=>i.n),a=ks(A),b=ks(B),sa=new Set(a),sb=new Set(b);
+ T=k=='merge'?[...new Set(a.concat(b))]:k=='inter'?a.filter(i=>sb.has(i)):k=='diffab'?a.filter(i=>!sb.has(i)):b.filter(i=>!sa.has(i));
+ $('#to').innerHTML='<div class="bar"><b>نتیجه: '+fa(T.length)+' شماره</b> <span class="mu">(A: '+fa(a.length)+'، B: '+fa(b.length)+' شماره یکتا؛ نامعتبرها لحاظ نمی‌شوند)</span><button data-a="tc">کپی</button>'+['xlsx','csv','txt'].map(x=>'<button data-a="tx:'+x+'">'+x.toUpperCase()+'</button>').join('')+'</div><textarea readonly>'+T.slice(0,5000).join('\n')+'</textarea>'}
+/* ---------- self test ---------- */
+async function selftest(){const o=[],ck=(n,c)=>o.push((c?'PASS ':'FAIL ')+n),tr=$('#tr');tr.hidden=false;tr.textContent='در حال اجرا...';
+ const toFa=s=>s.replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]);
+ let d=await run('09151234567\n+989151234567\n00989151234567\n989151234567\n۰۹۱۵۱۲۳۴۵۶۷\n0915 123 4567\n(0915) 123-4567').p;
+ ck('۷ فرمت مختلف = یک شماره',d.items.length==1&&d.items[0].n=='09151234567'&&d.items[0].c==7);
+ d=await run('09151234567 09151234568').p;ck('شماره‌های مشابه ادغام نمی‌شوند',d.items.length==2);
+ d=await run('0915123, 02112345678, نام: علی 09121234567 تهران').p;ck('ناقص/ثابت نامعتبر + استخراج از متن',d.bad.length==2&&d.items.length==1);
+ d=await run('9151234567').p;ck('بدون صفر ابتدایی = معتبر',d.items[0]&&d.items[0].s=='ok'&&d.items[0].n=='09151234567');
+ d=await run('9151234567\n09151234567').p;ck('با صفر و بدون صفر = تکراری',d.items.length==1&&d.items[0].c==2);
+ const pre=['0910','0912','0915','0919','0935','0990'],pool=[];for(let i=0;i<30000;i++)pool.push(pre[i%6]+String(1000000+(i*7919)%9000000));
+ const F=[x=>x,x=>'+98'+x.slice(1),x=>'0098'+x.slice(1),x=>'98'+x.slice(1),toFa,x=>x.slice(0,4)+' '+x.slice(4,7)+' '+x.slice(7)],L=[];
+ for(let j=0;j<50000;j++)L.push(F[j%6](pool[j<30000?j:(j*7)%30000]));
+ for(const[n,t]of[[50000,L.join('\n')],[100000,L.join('\n')+'\n'+L.join('\n')]]){const t0=performance.now();d=await run(t).p;
+  ck(fa(n)+' شماره: '+Math.round(performance.now()-t0)+' ms، یکتا='+d.items.length+' (انتظار ۳۰۰۰۰)',d.items.length==30000&&d.items.reduce((x,i)=>x+i.c,0)==n)}
+ tr.textContent=o.join('\n')}
+render();
+</script></body></html>
